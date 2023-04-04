@@ -5,6 +5,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /*
 * EnableWebSecurity: WebSecurityConfigurerAdapter 를 상속하고
@@ -43,14 +44,23 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
         - rememberMe(): 자동 로그인 기능 세부설정
     */
     http
-      .authorizeRequests()
-        .antMatchers("/me").hasAnyRole("USER", "ADMIN") // "/me"에 접근하려면 사용자가 USER 또는 ADMIN이라는 접근 권한을 가져야 한다. >> "/me"는 인증영역임.
-        .anyRequest().permitAll() // (그 외에 모든 영역은) 익명영역임. 모두 허용한다.
-        .and()
-      .formLogin()
-        .defaultSuccessUrl("/")
-        .permitAll() // 모두 허용
-        .and()
+          .authorizeRequests()
+            .antMatchers("/me").hasAnyRole("USER", "ADMIN") // "/me"에 접근하려면 사용자가 USER 또는 ADMIN이라는 접근 권한을 가져야 한다. >> "/me"는 인증영역임.
+            .anyRequest().permitAll() // (그 외에 모든 영역은) 익명영역임. 모두 허용한다.
+            .and()
+          .formLogin()
+            .defaultSuccessUrl("/")
+            .permitAll() // 모두 허용
+            .and()
+          .logout()
+            .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+            .logoutSuccessUrl("/")
+            .invalidateHttpSession(true)
+            .clearAuthentication(true)
+            .and()
+          .rememberMe()
+            .rememberMeParameter("remember-me")
+            .tokenValiditySeconds(300)
     ;
   }
   /*
