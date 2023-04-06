@@ -75,14 +75,16 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
         .expressionHandler(expressionHandler())
         .and()
       .formLogin()
-        .defaultSuccessUrl("/")
+        .defaultSuccessUrl("/my-login") //로그인 url을 기본으로 생성되는 로그인 페이지가 아니라 직접 만든 로그인 페이지로 설정
+        .usernameParameter("my-username") // 파라미터 커스텀 가능. html login 페이지의 input box 에 동일한 이름으로 입력
+         .passwordParameter("my-password")
         .permitAll()
         .and()
       /**
        * remember me 설정
        */
       .rememberMe()
-        .rememberMeParameter("remember-me")
+        .rememberMeParameter("remember-me")  // 파라미터 커스텀 가능. html login 페이지의 remember me check box 에 동일한 이름으로 입력
         .tokenValiditySeconds(300)
         .and()
       /**
