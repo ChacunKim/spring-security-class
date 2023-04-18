@@ -4,7 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.AccessDecisionManager;
+import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.expression.SecurityExpressionHandler;
+import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,9 +19,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.FilterInvocation;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.expression.WebExpressionVoter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -60,12 +66,22 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
     return new CustomWebSecurityExpressionHandler(new AuthenticationTrustResolverImpl(), "ROLE_");
   }
 
+  // Custom AccessDecisionManager 를 Bean 으로 등록
+  @Bean
+  public AccessDecisionManager accessDecisionManager(){
+    List<AccessDecisionVoter<?>> voters = new ArrayList<>();
+    voters.add(new WebExpressionVoter());
+    voters.add(new OddAdminVoter(new AntPathRequestMatcher("/admin"))); //requestMatcher로 AntPathRequestMatcher 를 넣어줌.
+    return new UnanimousBased(voters);
+  }
+
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     http
       .authorizeRequests()
         .antMatchers("/me").hasAnyRole("USER", "ADMIN")
-        .antMatchers("/admin").access("isFullyAuthenticated() and hasRole('ADMIN') and oddAdmin")
+//        .antMatchers("/admin").access("isFullyAuthenticated() and hasRole('ADMIN') and oddAdmin")
+        .antMatchers("/admin").access("isFullyAuthenticated() and hasRole('ADMIN')")
             /**
              * /admin에 접근하기 위해서는
              *   1) isFullyAuthenticated(): rememberMe가 아닌 id, password 를 입력하고 인증받은 사용자여야 한다.
@@ -74,7 +90,8 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
              * */
 
         .anyRequest().permitAll()
-        .expressionHandler(expressionHandler()) //customExpressionHandler를 설정
+//        .expressionHandler(expressionHandler()) //customExpressionHandler를 설정
+        .accessDecisionManager(accessDecisionManager()) //accessDecisionManager를 설정
         .and()
       .formLogin()
         .defaultSuccessUrl("/my-login") //로그인 url을 기본으로 생성되는 로그인 페이지가 아니라 직접 만든 로그인 페이지로 설정
