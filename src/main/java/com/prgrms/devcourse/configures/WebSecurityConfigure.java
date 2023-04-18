@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.FilterInvocation;
@@ -69,10 +70,11 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
              * /admin에 접근하기 위해서는
              *   1) isFullyAuthenticated(): rememberMe가 아닌 id, password 를 입력하고 인증받은 사용자여야 한다.
              *   2) hasRole('ADMIN'): ADMIN권한을 가진 사용자여야 한다.
+             *   3) oddAdmin: CustomWebSecurityExpressionRoot의 isOddAdmin(): 홀수 admin이어야 함(admin01)
              * */
 
         .anyRequest().permitAll()
-        .expressionHandler(expressionHandler())
+        .expressionHandler(expressionHandler()) //customExpressionHandler를 설정
         .and()
       .formLogin()
         .defaultSuccessUrl("/my-login") //로그인 url을 기본으로 생성되는 로그인 페이지가 아니라 직접 만든 로그인 페이지로 설정
@@ -102,6 +104,18 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
       .requiresChannel()
         .anyRequest().requiresSecure()
         .and()
+      /**
+       * sessionManagement: sessionFixation attack 방어: 로그인 후 세션 새로 발급
+       * */
+      .sessionManagement()
+         .sessionFixation()
+         .changeSessionId()
+         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) //세션 생성 전략 설정
+         .invalidSessionUrl("/") //유효하지 않은 session이 감시되었을 때 이동할 url
+         .maximumSessions(1) //최대로 동시 로그인 가능한 session 개수
+            .maxSessionsPreventsLogin(false) // 로그인 가능한 session 개수 도달 시 로그인 여부. 불가
+            .and()
+         .and()
       /**
        * 예외처리 핸들러
        */

@@ -12,21 +12,21 @@ import static org.apache.commons.lang3.math.NumberUtils.toInt;
 
 public class CustomWebSecurityExpressionRoot extends WebSecurityExpressionRoot {
 
-  static final Pattern PATTERN = Pattern.compile("[0-9]+$");
+  static final Pattern PATTERN = Pattern.compile("[0-9]+$"); //정규식
 
   public CustomWebSecurityExpressionRoot(Authentication a, FilterInvocation fi) {
     super(a, fi);
   }
 
   public boolean isOddAdmin() {
-    User user = (User) getAuthentication().getPrincipal();
-    String name = user.getUsername();
-    Matcher matcher = PATTERN.matcher(name);
+    User user = (User) getAuthentication().getPrincipal(); //사용자 principal: 사용자 객체
+    String name = user.getUsername(); //user 이름 가져옴
+    Matcher matcher = PATTERN.matcher(name); //이름 끝부분이 홀/짝인지 확인
     if (matcher.find()) {
       int number = toInt(matcher.group(), 0);
-      return number % 2 == 1;
+      return number % 2 == 1; //홀수이면 true 리턴
     }
-    return false;
+    return false;//짝수이면 false 리턴
   }
 
 }

@@ -5,7 +5,9 @@ import org.springframework.security.access.expression.SecurityExpressionOperatio
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.FilterInvocation;
+import org.springframework.security.web.access.expression.WebSecurityExpressionRoot;
 
+//DefaultWebSecurityExpressionHandler 와 비슷하게 구현
 public class CustomWebSecurityExpressionHandler extends AbstractSecurityExpressionHandler<FilterInvocation> {
 
   private final AuthenticationTrustResolver trustResolver;
@@ -17,8 +19,11 @@ public class CustomWebSecurityExpressionHandler extends AbstractSecurityExpressi
     this.defaultRolePrefix = defaultRolePrefix;
   }
 
+  //isOddAdmin()을 security 표현식에 사용 가능하도록 설정.
   @Override
   protected SecurityExpressionOperations createSecurityExpressionRoot(Authentication authentication, FilterInvocation fi) {
+//DefaultWebSecurityExpressionHandler 의
+//    WebSecurityExpressionRoot root = new WebSecurityExpressionRoot(authentication, fi); 를 아래와 같이 변경
     CustomWebSecurityExpressionRoot root = new CustomWebSecurityExpressionRoot(authentication, fi);
     root.setPermissionEvaluator(getPermissionEvaluator());
     root.setTrustResolver(this.trustResolver);
