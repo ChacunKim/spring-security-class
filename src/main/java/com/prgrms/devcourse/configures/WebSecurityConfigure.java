@@ -16,6 +16,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -32,6 +33,10 @@ import java.util.List;
 public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
+
+  public WebSecurityConfigure(){
+    SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+  }
 
   @Bean
   @Qualifier("myAsyncTaskExecutor")

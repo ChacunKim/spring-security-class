@@ -23,6 +23,14 @@ public class SimpleController {
     this.simpleService = simpleService;
   }
 
+  /*
+  * SpringMvc
+  *   - 기본적으로 Thread per request: 1요청 1쓰레드
+  *   - 하나의 HTTP 요청이 완료될 때까지 모두 동일한 쓰레드에서 요청을 처리
+  * Thread Local 변수
+  *   - 개별 Thread들의 개별 저장공간.
+  *
+  * */
   @GetMapping(path = "/asyncHello")
   @ResponseBody
   public Callable<String> asyncHello() {
