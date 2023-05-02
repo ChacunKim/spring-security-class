@@ -1,12 +1,25 @@
 package com.prgrms.devcourse.configures;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.SecurityExpressionHandler;
+import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.FilterInvocation;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import javax.servlet.http.HttpServletResponse;
+import java.nio.file.AccessDeniedException;
 
 /*
 * EnableWebSecurity: WebSecurityConfigurerAdapter 를 상속하고
@@ -15,10 +28,12 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 * 오버라이드해서 spring security 를 커스텀할 수 있음
 * */
 
+
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
 
+  private final Logger log = LoggerFactory.getLogger(getClass());
   @Override
   protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 /*
@@ -86,16 +101,44 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
             .defaultSuccessUrl("/")
             .permitAll() // 모두 허용
             .and()
+            /**
+             * 로그아웃 설정
+             * */
           .logout()
             .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
             .logoutSuccessUrl("/")
             .invalidateHttpSession(true) //default가 true. logout이 성공했을 때 해당 사용자의 session을 invalidate
             .clearAuthentication(true) // default가 true. logout 성공 시 security authentication을 null로 clear
             .and()
+            /**
+             * remember me 설정
+             * */
           .rememberMe()
             .rememberMeParameter("remember-me")
             .tokenValiditySeconds(60 * 5)
             .alwaysRemember(false)
+            .and()
+            /**
+             * ssl 설정: http 요청을 https 요청으로 리다이렉트
+             * */
+          .requiresChannel()
+            .anyRequest().requiresSecure()
+            .and()
+            /**
+             * anonymous authentication filter 설정. 굳이 할 일 없다고 한다.
+             * */
+          .anonymous()
+            .principal("thisIsAnonymousUser")
+            .authorities("ROLE_ANONYMOUS", "ROLE_UNKNOWN")
+            .and()
+            /**
+             * 예외처리 핸들러
+             */
+          .exceptionHandling()
+            .accessDeniedHandler(accessDeniedHandler())
+
+
+
     ;
   }
   /*
@@ -122,5 +165,23 @@ public class WebSecurityConfigure extends WebSecurityConfigurerAdapter {
       roles: USER
 
    */
+
+  @Bean
+  public AccessDeniedHandler accessDeniedHandler() {
+    return (request, response, e) -> {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      Object principal = authentication != null ? authentication.getPrincipal() : null;
+      log.warn("{} is denied", principal, e);
+      response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      response.setContentType("text/plain;charset=UTF-8");
+      response.getWriter().write("ACCESS DENIED");
+      response.getWriter().flush();
+      response.getWriter().close();
+    };
+  }
+
+  public SecurityExpressionHandler<FilterInvocation> expressionHandler() {
+    return new CustomWebSecurityExpressionHandler(new AuthenticationTrustResolverImpl(), "ROLE_");
+  }
 
 }
